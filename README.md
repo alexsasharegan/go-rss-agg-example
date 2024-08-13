@@ -16,10 +16,10 @@ go build && ./go-rss-agg-example
 [Goose](http://pressly.github.io/goose/)
 
 ```sh
-cd sql/schema
-source ../../.env
-goose $DB_URL up
-goose $DB_URL down
+cd sql/schema;
+source ../../.env;
+goose postgres $DB_URL up;
+goose postgres $DB_URL down;
 ```
 
 ### SQL Code Generation

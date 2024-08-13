@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/alexsasharegan/go-rss-agg-example/internal/database"
 	chi "github.com/go-chi/chi/v5"
@@ -37,9 +38,11 @@ func main() {
 		log.Fatalln("Cannot connect to database", dbURL)
 	}
 
-	apiConf := apiConfig{
+	api := apiConfig{
 		DB: database.New(conn),
 	}
+
+	startScraping(api.DB, 16, 1*time.Minute)
 
 	router := chi.NewRouter()
 
@@ -57,14 +60,15 @@ func main() {
 
 	v1Router.Get("/healthz", healthzHandler)
 	v1Router.Get("/errorz", errorzHandler)
-	v1Router.Post("/users", apiConf.handlerCreateUser)
-	v1Router.Get("/feeds", apiConf.handlerGetFeeds)
+	v1Router.Post("/users", api.handlerCreateUser)
+	v1Router.Get("/feeds", api.handlerGetFeeds)
 	// Authenticated Routes ------------------------------------------------
-	v1Router.Get("/users", apiConf.middlewareAuth(apiConf.handlerGetUser))
-	v1Router.Post("/feeds", apiConf.middlewareAuth(apiConf.handlerCreateFeed))
-	v1Router.Post("/follows", apiConf.middlewareAuth(apiConf.handlerCreateFeedFollow))
-	v1Router.Get("/follows", apiConf.middlewareAuth(apiConf.handlerGetFeedFollows))
-	v1Router.Delete("/follows/{feedFollowID}", apiConf.middlewareAuth(apiConf.handlerDeleteFeedFollow))
+	v1Router.Get("/posts", api.middlewareAuth(api.handlerGetPostsByUser))
+	v1Router.Get("/users", api.middlewareAuth(api.handlerGetUser))
+	v1Router.Post("/feeds", api.middlewareAuth(api.handlerCreateFeed))
+	v1Router.Post("/follows", api.middlewareAuth(api.handlerCreateFeedFollow))
+	v1Router.Get("/follows", api.middlewareAuth(api.handlerGetFeedFollows))
+	v1Router.Delete("/follows/{feedFollowID}", api.middlewareAuth(api.handlerDeleteFeedFollow))
 
 	srv := &http.Server{
 		Handler: router,

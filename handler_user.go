@@ -46,3 +46,25 @@ func (apiConf *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reque
 func (apiConf *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user database.User) {
 	respondWithJSON(w, http.StatusOK, databaseUserToUser(user))
 }
+
+func (apiConf *apiConfig) handlerGetPostsByUser(w http.ResponseWriter, r *http.Request, user database.User) {
+	posts, err := apiConf.DB.GetPostsByUser(r.Context(), database.GetPostsByUserParams{
+		UserID: user.ID,
+		Limit:  10,
+	})
+	if err != nil {
+		respondWithError(
+			w,
+			http.StatusBadRequest,
+			fmt.Errorf("failed to get posts: %s", err),
+		)
+		return
+	}
+
+	payload := make([]Post, len(posts))
+	for i, p := range posts {
+		payload[i] = databasePostToPost(p)
+	}
+
+	respondWithJSON(w, http.StatusOK, payload)
+}
